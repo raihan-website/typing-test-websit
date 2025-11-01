@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,25 +8,29 @@
         body {
             font-family: Arial, sans-serif;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             height: 100vh;
             margin: 0;
             background-color: #f4f4f4;
         }
         .container {
-            text-align: center;
-            background: white;
+            max-width: 800px;
             padding: 20px;
-            border-radius: 10px;
+            background: white;
+            border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            width: 80%;
-            max-width: 600px;
+            text-align: center;
         }
         #text-to-type {
             font-size: 18px;
-            margin-bottom: 20px;
             line-height: 1.5;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fafafa;
         }
         #input-field {
             width: 100%;
@@ -34,106 +38,109 @@
             font-size: 16px;
             padding: 10px;
             border: 1px solid #ccc;
-            border-radius: 5px;
+            border-radius: 4px;
             margin-bottom: 20px;
         }
-        #results {
+        #stats {
             margin-top: 20px;
         }
         button {
             padding: 10px 20px;
-            background-color: #007bff;
+            font-size: 16px;
+            cursor: pointer;
+            background: #007bff;
             color: white;
             border: none;
-            border-radius: 5px;
-            cursor: pointer;
+            border-radius: 4px;
         }
         button:hover {
-            background-color: #0056b3;
+            background: #0056b3;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Tes Mengetik</h1>
-        <p id="text-to-type">Ini adalah contoh teks untuk tes mengetik. Ketiklah dengan cepat dan akurat!</p>
+        <h1>Typing Test</h1>
+        <p>Ketik teks di bawah ini secepat dan seakurat mungkin dalam 60 detik.</p>
+        <div id="text-to-type">The quick brown fox jumps over the lazy dog. This is a simple typing test to measure your speed and accuracy. Keep practicing to improve your skills!</div>
         <textarea id="input-field" placeholder="Mulai mengetik di sini..."></textarea>
-        <button id="start-btn">Mulai Tes</button>
-        <div id="results" style="display: none;">
-            <p>Waktu: <span id="time">0</span> detik</p>
-            <p>Kecepatan: <span id="wpm">0</span> WPM</p>
-            <p>Akurasi: <span id="accuracy">0</span>%</p>
+        <div id="stats">
+            <p>Waktu: <span id="time">60</span> detik</p>
+            <p>WPM: <span id="wpm">0</span></p>
+            <p>Akurasi: <span id="accuracy">100%</span></p>
         </div>
+        <button id="start-btn">Mulai</button>
+        <button id="reset-btn">Reset</button>
     </div>
 
     <script>
-        const textToType = document.getElementById('text-to-type');
+        const textToType = document.getElementById('text-to-type').textContent;
         const inputField = document.getElementById('input-field');
+        const timeDisplay = document.getElementById('time');
+        const wpmDisplay = document.getElementById('wpm');
+        const accuracyDisplay = document.getElementById('accuracy');
         const startBtn = document.getElementById('start-btn');
-        const results = document.getElementById('results');
-        const timeSpan = document.getElementById('time');
-        const wpmSpan = document.getElementById('wpm');
-        const accuracySpan = document.getElementById('accuracy');
+        const resetBtn = document.getElementById('reset-btn');
 
-        let startTime, endTime;
-        let isTestRunning = false;
+        let timeLeft = 60;
+        let timer;
+        let isStarted = false;
+        let startTime;
+        let correctChars = 0;
+        let totalChars = 0;
 
-        // Teks acak (bisa diganti)
-        const sampleTexts = [
-            "Ini adalah tes mengetik sederhana. Coba ketik dengan cepat dan benar.",
-            "JavaScript membuat website interaktif. HTML untuk struktur, CSS untuk gaya.",
-            "Praktik mengetik setiap hari bisa meningkatkan kecepatan dan akurasi."
-        ];
-
-        startBtn.addEventListener('click', () => {
-            if (!isTestRunning) {
-                startTest();
-            } else {
-                endTest();
-            }
-        });
+        startBtn.addEventListener('click', startTest);
+        resetBtn.addEventListener('click', resetTest);
+        inputField.addEventListener('input', updateStats);
 
         function startTest() {
-            isTestRunning = true;
+            if (!isStarted) {
+                isStarted = true;
+                startTime = Date.now();
+                inputField.focus();
+                timer = setInterval(() => {
+                    timeLeft--;
+                    timeDisplay.textContent = timeLeft;
+                    if (timeLeft <= 0) {
+                        clearInterval(timer);
+                        inputField.disabled = true;
+                        alert('Waktu habis! WPM: ' + wpmDisplay.textContent + ', Akurasi: ' + accuracyDisplay.textContent);
+                    }
+                }, 1000);
+            }
+        }
+
+        function updateStats() {
+            if (!isStarted) return;
+            const input = inputField.value;
+            totalChars = input.length;
+            correctChars = 0;
+            for (let i = 0; i < input.length; i++) {
+                if (input[i] === textToType[i]) {
+                    correctChars++;
+                }
+            }
+            const accuracy = totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 100;
+            accuracyDisplay.textContent = accuracy + '%';
+
+            const timeElapsed = (Date.now() - startTime) / 1000 / 60; // dalam menit
+            const wordsTyped = correctChars / 5; // asumsi 5 karakter per kata
+            const wpm = Math.round(wordsTyped / timeElapsed);
+            wpmDisplay.textContent = wpm || 0;
+        }
+
+        function resetTest() {
+            clearInterval(timer);
+            timeLeft = 60;
+            timeDisplay.textContent = timeLeft;
+            wpmDisplay.textContent = '0';
+            accuracyDisplay.textContent = '100%';
             inputField.value = '';
-            inputField.focus();
-            startTime = new Date();
-            startBtn.textContent = 'Selesai Tes';
-            results.style.display = 'none';
-            textToType.textContent = sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
+            inputField.disabled = false;
+            isStarted = false;
+            correctChars = 0;
+            totalChars = 0;
         }
-
-        function endTest() {
-            isTestRunning = false;
-            endTime = new Date();
-            const timeTaken = (endTime - startTime) / 1000;
-            const typedText = inputField.value;
-            const originalText = textToType.textContent;
-
-            // Hitung WPM
-            const wordsTyped = typedText.split(' ').length;
-            const wpm = Math.round((wordsTyped / timeTaken) * 60);
-
-            // Hitung akurasi
-            let correctChars = 0;
-            for (let i = 0; i < Math.min(typedText.length, originalText.length); i++) {
-                if (typedText[i] === originalText[i]) correctChars++;
-            }
-            const accuracy = Math.round((correctChars / originalText.length) * 100);
-
-            // Tampilkan hasil
-            timeSpan.textContent = timeTaken.toFixed(2);
-            wpmSpan.textContent = wpm;
-            accuracySpan.textContent = accuracy;
-            results.style.display = 'block';
-            startBtn.textContent = 'Mulai Tes';
-        }
-
-        inputField.addEventListener('input', () => {
-            if (isTestRunning && inputField.value === textToType.textContent) {
-                endTest();
-            }
-        });
     </script>
 </body>
 </html>
